@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratch .sb3 解析ツール</title>
+</head>
+<body>
+  <h1>Scratch .sb3 解析ツール</h1>
+
+  <label for="fileInput">.sb3 ファイルを選択:</label>
+  <input type="file" id="fileInput" accept=".sb3">
+
+  <p id="status">ファイルを選択してください。</p>
+
+  <!-- JSZip の読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // ========== ここから先ほどの JavaScript コードを貼り付ける ==========
+
+    async function json_analyze(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      const jsonEntry = Object.values(zip.files).find(f => f.name.endsWith('.json'));
+      if (!jsonEntry) return;
+      const jsonText = await jsonEntry.async('string');
+      const json = JSON.parse(jsonText);
+
+      let array = [];
+      array.push(file.name);
+      const sprites = json.targets;
+      array.push(sprites.length);
+      array.push('divider');
+
+      for (const value of sprites) {
+        const variables = Object.values(value.variables || {});
+        array.push(variables.length);
+        variables.forEach(hensus => {
+          array.push(hensus[0]);
+          array.push(hensus[1]);
+        });
+        const lists = Object.values(value.lists || {});
+        array.push(lists.length);
+        lists.forEach(list => {
+          array.push(list[0]);
+          array.push(list[1]);
+        });
+        const broadcasts = Object.values(value.broadcasts || {});
+        array.push(broadcasts.length);
+        broadcasts.forEach(message => {
+          array.push(message);
+        });
+        array.push(value.costumes.length);
+        for (const costume of value.costumes) {
+          array.push(costume.name);
+          const imgBuffer = await LoadFile(zip, costume.md5ext);
+          if (imgBuffer) {
+            const imgResult = await analyzeImage(imgBuffer);
+            array.push(imgResult);
+          } else {
+            array.push("NO_IMAGE");
+          }
+        }
+        array.push(value.sounds.length);
+        for (const sound of value.sounds) {
+          array.push(sound.name);
+          const sndBuffer = await LoadFile(zip, sound.md5ext);
+          if (sndBuffer) {
+            const sndResult = await analyzeAudio(sndBuffer);
+            array.push(sndResult);
+          } else {
+            array.push("NO_AUDIO");
+          }
+        }
+        const blocks = Object.values(value.blocks || {});
+        array.push(blocks.length);
+        blocks.forEach(block => {
+          array.push(block.opcode);
+          array.push(block.next);
+          array.push(block.parent);
+          array.push(JSON.stringify(block.inputs));
+          array.push(JSON.stringify(block.fields));
+          array.push(block.shadow);
+          array.push(block.topLevel);
+        });
+      }
+
+      const csv = array.map(v => (typeof v === 'string' && v.includes(',') ? '"'+v.replace(/"/g,'""')+'"' : v)).join('\n') + '\n';
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      return array;
+    }
+
+    async function extractAndClassify(zipBinary) {
+      const zip = await JSZip.loadAsync(zipBinary);
+      const jsonFiles = [];
+      const imageFiles = [];
+      const audioFiles = [];
+      for (const [path, entry] of Object.entries(zip.files)) {
+        if (entry.dir) continue;
+        const lower = path.toLowerCase();
+        if (lower.endsWith(".json")) {
+          const content = await entry.async("string");
+          jsonFiles.push({ path, content });
+          continue;
+        }
+        if (/\.(svg|png|bmp|jpg|jpeg|gif|webp)$/.test(lower)) {
+          const blob = await entry.async("blob");
+          imageFiles.push({ path, blob });
+          continue;
+        }
+        if (/\.(wav|mp3)$/.test(lower)) {
+          const blob = await entry.async("blob");
+          audioFiles.push({ path, blob });
+          continue;
+        }
+      }
+      return { jsonFiles, imageFiles, audioFiles };
+    }
+
+    async function LoadFile(zipBinary, Path) {
+      let zip;
+      if (typeof zipBinary === 'object' && typeof zipBinary.file === 'function') {
+        zip = zipBinary;
+      } else {
+        zip = await JSZip.loadAsync(zipBinary);
+      }
+      const file = zip.file(Path);
+      if (!file) return null;
+      return await file.async('uint8array');
+    }
+
+    async function analyzeImage(uint8arr) {
+      try {
+        const blob = new Blob([uint8arr], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        const img = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+        URL.revokeObjectURL(url);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+
+        return {
+          width: img.width,
+          height: img.height,
+          dataLength: imageData.data.length,
+        };
+      } catch (e) {
+        return '9UNKNOWNIMG';
+      }
+    }
+
+    async function analyzeAudio(uint8arr) {
+      return new Promise((resolve, reject) => {
+        const blob = new Blob([uint8arr]);
+        const url = URL.createObjectURL(blob);
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const source = audioContext.createBufferSource();
+        const gainNode = audioContext.createGain();
+
+        const intervalMs = 10;
+        let startTime = 0;
+        let samples = [];
+
+        fetch(url)
+          .then(res => res.arrayBuffer())
+          .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+          .then(audioBuffer => {
+            source.buffer = audioBuffer;
+            source.connect(gainNode);
+            gainNode.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            const duration = audioBuffer.duration;
+            const intervalId = setInterval(() => {
+              analyser.getByteFrequencyData(dataArray);
+
+              let maxIndex = 0;
+              let maxValue = 0;
+              for (let i = 0; i < bufferLength; i++) {
+                if (dataArray[i] > maxValue) {
+                  maxValue = dataArray[i];
+                  maxIndex = i;
+                }
+              }
+              const freq = (maxIndex / bufferLength) * (audioContext.sampleRate / 2);
+
+              let sum = 0;
+              for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+              }
+              const volume = (sum / bufferLength / 255) * 100;
+
+              samples.push({
+                time: startTime,
+                frequency: freq,
+                volume: volume,
+              });
+
+              startTime += intervalMs / 1000;
+
+              if (startTime >= duration) {
+                clearInterval(intervalId);
+                source.stop();
+                audioContext.close().then(() => {
+                  URL.revokeObjectURL(url);
+
+                  const buffer = new ArrayBuffer(samples.length * 9);
+                  const view = new DataView(buffer);
+                  for (let i = 0; i < samples.length; i++) {
+                    const s = samples[i];
+                    view.setFloat32(i * 9, s.time, true);
+                    view.setFloat32(i * 9 + 4, s.frequency, true);
+                    view.setUint8(i * 9 + 8, Math.round(s.volume));
+                  }
+                  resolve(new Uint8Array(buffer));
+                });
+              }
+            }, intervalMs);
+
+            source.start(0);
+          })
+          .catch(err => {
+            URL.revokeObjectURL(url);
+            reject('9UNKNOWNAUD');
+          });
+      });
+    }
+
+    // ========== ここまで JavaScript コードを貼り付ける ==========
+
+    // イベントリスナー（関数定義の後に書く）
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = '解析中...';
+
+      try {
+        await json_analyze(file);
+        statusEl.textContent = '解析完了。CSVがダウンロードされました。';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'エラーが発生しました。コンソールを確認してください。';
+      }
+    });
+  </script>
+</body>
+</html>
