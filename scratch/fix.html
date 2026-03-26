@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scratch .sb3 解析ツール</title>
+</head>
+<body>
+  <h1>Scratch .sb3 解析ツール</h1>
+
+  <label for="fileInput">.sb3 ファイルを選択:</label>
+  <input type="file" id="fileInput" accept=".sb3">
+
+  <p id="status">ファイルを選択してください。</p>
+
+  <!-- JSZip の読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // ここに先ほどの JavaScript コードを貼り付ける
+    // （json_analyze, extractAndClassify, LoadFile, analyzeImage, analyzeAudio など）
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = '解析中...';
+
+      try {
+        await json_analyze(file);
+        statusEl.textContent = '解析完了。CSVがダウンロードされました。';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'エラーが発生しました。コンソールを確認してください。';
+      }
+    });
+  </script>
+</body>
+</html>
