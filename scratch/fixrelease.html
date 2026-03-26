@@ -138,9 +138,51 @@
       return await file.async('uint8array');
     }
 
+    function detectMimeType(uint8arr) {
+      // PNG
+      if (uint8arr[0] === 0x89 && uint8arr[1] === 0x50 && uint8arr[2] === 0x4E && uint8arr[3] === 0x47) {
+        return 'image/png';
+      }
+      // JPEG
+      if (uint8arr[0] === 0xFF && uint8arr[1] === 0xD8) {
+        return 'image/jpeg';
+      }
+      // GIF
+      if (uint8arr[0] === 0x47 && uint8arr[1] === 0x49 && uint8arr[2] === 0x46) {
+        return 'image/gif';
+      }
+      // WebP (RIFF + WEBP)
+      if (uint8arr[0] === 0x52 && uint8arr[1] === 0x49 && uint8arr[2] === 0x46 && uint8arr[3] === 0x46 &&
+        uint8arr[8] === 0x57 && uint8arr[9] === 0x45 && uint8arr[10] === 0x42 && uint8arr[11] === 0x50) {
+        return 'image/webp';
+      }
+      // SVG（簡易判定）
+      const text = new TextDecoder().decode(uint8arr.slice(0, 1024));
+      if (text.includes('<svg') || text.includes('<?xml')) {
+        return 'image/svg+xml';
+      }
+      return 'image/png';
+    }
+
     async function analyzeImage(uint8arr) {
       try {
-        const blob = new Blob([uint8arr], { type: 'image/png' });
+        const mime = detectMimeType(uint8arr);
+        if (mimeType === 'image/svg+xml') {
+          // SVGの場合はXMLとして解析
+          const text = new TextDecoder().decode(uint8arr);
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(text, 'image/svg+xml');
+          const svg = doc.documentElement;
+          const width = svg.getAttribute('width') || '0';
+          const height = svg.getAttribute('height') || '0';
+          return {
+            width: parseInt(width, 10) || 0,
+            height: parseInt(height, 10) || 0,
+            dataLength: uint8arr.length,
+            isSvg: true,
+          };
+        }
+        const blob = new Blob([uint8arr], { type: mime });
         const url = URL.createObjectURL(blob);
         const img = await new Promise((resolve, reject) => {
           const img = new Image();
