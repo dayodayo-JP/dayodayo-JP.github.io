@@ -58,7 +58,11 @@
           const imgBuffer = await LoadFile(zip, costume.md5ext);
           if (imgBuffer) {
             const imgResult = await analyzeImage(imgBuffer);
-            array.push(JSON.stringify(imgResult));
+            if (typeof imgResult === 'object') {
+              array.push(JSON.stringify(imgResult));
+            } else {
+              array.push(imgResult);
+            }
           } else {
             array.push("NO_IMAGE");
           }
