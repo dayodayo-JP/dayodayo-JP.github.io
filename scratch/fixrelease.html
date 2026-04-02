@@ -167,48 +167,52 @@
     async function analyzeImage(uint8arr) {
       try {
         const mime = detectMimeType(uint8arr);
+        let img, width, height;
+        let url;
         if (mime === 'image/svg+xml') {
-          // SVGの場合はXMLとして解析
+          // SVGをdataURL化
           const text = new TextDecoder().decode(uint8arr);
+          // 幅・高さ取得（なければ100x100）
           const parser = new DOMParser();
           const doc = parser.parseFromString(text, 'image/svg+xml');
           const svg = doc.documentElement;
-          const width = svg.getAttribute('width') || '0';
-          const height = svg.getAttribute('height') || '0';
-          return {
-            width: parseInt(width, 10) || 0,
-            height: parseInt(height, 10) || 0,
-            dataLength: uint8arr.length,
-            isSvg: true,
-          };
+          width = parseInt(svg.getAttribute('width'), 10) || 100;
+          height = parseInt(svg.getAttribute('height'), 10) || 100;
+          const svg64 = btoa(unescape(encodeURIComponent(text)));
+          url = 'data:image/svg+xml;base64,' + svg64;
+        } else {
+          const blob = new Blob([uint8arr], { type: mime });
+          url = URL.createObjectURL(blob);
         }
-        const blob = new Blob([uint8arr], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const img = await new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = url;
+        img = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = url;
         });
-        URL.revokeObjectURL(url);
-
+        if (mime !== 'image/svg+xml') {
+          width = img.width;
+          height = img.height;
+        }
+        // Canvas描画
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-
+        ctx.drawImage(img, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const pixels = Array.from(imageData.data);
+        if (mime !== 'image/svg+xml') URL.revokeObjectURL(url);
         return {
-          width: img.width,
-          height: img.height,
+          width,
+          height,
           dataLength: imageData.data.length,
+          pixels, // RGBA配列
         };
       } catch (e) {
         return e.message;
       }
     }
-
     async function analyzeAudio(uint8arr) {
       return new Promise((resolve, reject) => {
         const blob = new Blob([uint8arr]);
