@@ -58,11 +58,7 @@
           const imgBuffer = await LoadFile(zip, costume.md5ext);
           if (imgBuffer) {
             const imgResult = await analyzeImage(imgBuffer);
-            if (typeof imgResult === 'object') {
-              array.push(JSON.stringify(imgResult));
-            } else {
-              array.push(imgResult);
-            }
+            array.push(imgResult.width + "," + imgResult.height + "," + imgResult.pixels);
           } else {
             array.push("NO_IMAGE");
           }
@@ -90,7 +86,6 @@
           array.push(block.topLevel);
         });
       }
-
       const csv = array.map(v => (typeof v === 'string' && v.includes(',') ? '"'+v.replace(/"/g,'""')+'"' : v)).join('\n') + '\n';
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
