@@ -35,12 +35,13 @@
 
       for (const value of sprites) {
         const variables = Object.values(value.variables || {});
+        const lists = Object.values(value.lists || {});
         array.push(variables.length + lists.length);
         variables.forEach(hensus => {
           array.push(hensus[0]);
           array.push(hensus[1]);
         });
-        const lists = Object.values(value.lists || {});
+        
         lists.forEach(list => {
           array.push(list[0]);
           array.push(list[1]);
