@@ -35,6 +35,7 @@
       let counter = 1;
 
       for (const value of sprites) {
+        array.push(value.name);
         const variables = Object.values(value.variables || {});
         const lists = Object.values(value.lists || {});
         array.push(variables.length + lists.length);
