@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SASM-Compiler</title>
+    </head>
+    <body>
+        <h1>SASM-Compiler</h1>
+        <label for="fileInput">SB3ファイルを選択して下さい:</label>
+        <input type="file" id="fileInput" accept=".sb3">
+        <p id="status">ファイルを選択して下さい。</p>
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script>
+            async function Analyse_JSON(file){
+                const arrayBuffer = await file.arrayBuffer();
+                const zip = await JSZip.loadAsync(arrayBuffer);
+
+                const JSON_Entry = Object.values(zip.files).find(f => f.name.endsWith('.json'));
+                if(!JSON_Entry) return;
+                const JSON_Text = await JSON_Entry.async('string');
+                const Project_JSON = JSON.parse(JSON_Text);
+                return Project_JSON;
+            }
+            async function SASM_Compile(file){
+                const JSON = await Analyse_JSON(file);
+                let array = [];
+                array.push(file.name);
+            }
+        </script>
