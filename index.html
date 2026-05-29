@@ -4,11 +4,39 @@
         <title>dayodayo Web Site</title>
         <style>
             body{
-                background-color: lightblue;
+                background-color: #042C53;
+            }
+            .menu-bar{
+                width: 100%;
+                height: 70px;
+                background-color: #0C447C;
+                padding-top: 5px;
+                box-sizing: border-box;
+            }
+            ul{
+                display: flex;
+            }
+            li{
+                list-style: none;
+            }
+            a {
+                display: block;
+                text-decoration: none;
+                color: #5DCAA5;
+                margin-right: 35px;
             }
         </style>
     </head>
     <body>
+        <nav class="menu-bar">
+            <ul>
+                <!--メニューバー　ドロップダウンメニューを作る際は[https://itmemogaki.cloudfree.jp/website/drop-down-menu.html]等を参考に-->
+                <li><a href="https://dayodayo-jp.github.io/blog/index.html">日誌</a></li>
+                <li><a href="https://dayodayo-jp.github.io/tech-blog/index.html">技術ブログ</a></li>
+                <li><a href="https://dayodayo-jp.github.io/gallery/index.html">自作品ギャラリー</a></li>
+                <li><a href="https://dayodayo-jp.github.io/SNS-link/index.html">SNS</a></li>
+            </ul>
+        </nav>
         <p>dayodayoのマイページ</p>
     </body>
 </html>
