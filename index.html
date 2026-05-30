@@ -35,12 +35,18 @@
                 height: 100%;
                 border: 2px solid #000000;
                 margin: 0 0 auto 0;
+                flex-shrink: 0;
             }
             .main{
+                flex: 1;
                 width: 70%;
                 height: 100%;
                 border: 2px solid #000000;
                 margin: 0 0 0 auto;
+            }
+            .body{
+                display: flex;
+                min-height: calc(100vh - 70px);
             }
         </style>
     </head>
@@ -54,22 +60,24 @@
                 <li><a href="https://dayodayo-jp.github.io/SNS-link/index.html">SNS</a></li>
             </ul>
         </nav>
-        <div class="side-bar">
-            <h1>目次</h1>
-            <nav class="index">
-                <li><a href="">？</a></li>
-            </nav>
-            <h1>最新記事</h1>
-            <nav class="relate">
-                <li><a href="">？</a></li>
-            </nav>
-            <h1>人気記事</h1>
-            <nav class="popular">
-                <li><a href="">？</a></li>
-            </nav>
-        </div>
-        <div class="main">
-            <h1>dayodayoのホームページ</h1>
+        <div class="body">
+            <aside class="side-bar">
+                <h1>目次</h1>
+                <nav class="index">
+                    <li><a href="">？</a></li>
+                </nav>
+                <h1>最新記事</h1>
+                <nav class="relate">
+                    <li><a href="">？</a></li>
+                </nav>
+                <h1>人気記事</h1>
+                <nav class="popular">
+                    <li><a href="">？</a></li>
+                </nav>
+            </aside>
+            <div class="main">
+                <h1>dayodayoのホームページ</h1>
+            </div>
         </div>
     </body>
 </html>
