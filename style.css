@@ -1,0 +1,83 @@
+/* クラス */
+.highest-bar{
+    display: flex;
+    width: 100%;
+    height: 70px;
+    background-color: darkgrey;
+    align-items: center;
+}
+
+.menu-bar{
+    display: flex;
+    width:100%;
+    height: 70px;
+}
+
+.side-bar{
+    width: 30%;
+    height: calc(100dvh - 140px);
+    background-color: black;
+}
+
+.main{
+    width: 70%;
+    height: calc(100dvh - 140px);
+}
+/* ID */
+
+.index{
+
+}
+
+.latest{
+
+}
+
+.popular{
+
+}
+
+.article{
+
+}
+
+/* 属性 */
+nav{
+
+}
+
+ul{
+
+}
+
+li{
+
+}
+
+div{
+
+}
+
+aside{
+
+}
+
+section{
+
+}
+
+h1{
+
+}
+
+main{
+
+}
+
+article{
+
+}
+
+div{
+
+}
