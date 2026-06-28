@@ -14,70 +14,12 @@
 }
 
 .side-bar{
-    width: 30%;
+    width: 30dvh;
     height: calc(100dvh - 140px);
     background-color: black;
 }
 
 .main{
-    width: 70%;
+    width: 70dvh;
     height: calc(100dvh - 140px);
-}
-/* ID */
-
-.index{
-
-}
-
-.latest{
-
-}
-
-.popular{
-
-}
-
-.article{
-
-}
-
-/* 属性 */
-nav{
-
-}
-
-ul{
-
-}
-
-li{
-
-}
-
-div{
-
-}
-
-aside{
-
-}
-
-section{
-
-}
-
-h1{
-
-}
-
-main{
-
-}
-
-article{
-
-}
-
-div{
-
 }
