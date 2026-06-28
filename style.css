@@ -13,6 +13,10 @@
     height: 70px;
 }
 
+.body{
+    display: flex;
+}
+
 .side-bar{
     width: 30dvh;
     height: calc(100dvh - 140px);
